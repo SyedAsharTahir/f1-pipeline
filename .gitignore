@@ -2,3 +2,8 @@
 data/
 __pycache__/
 .venv/
+logs/
+f1_dbt/target/
+f1_dbt/dbt_packages/
+f1_dbt/logs/
+f1_dbt/.user.yml
