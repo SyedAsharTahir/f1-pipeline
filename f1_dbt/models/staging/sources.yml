@@ -5,3 +5,15 @@ sources:
     tables:
       - name: circuits
       - name: races
+      - name: drivers
+      - name: constructor_results
+      - name: constructors
+      - name: driver_standings
+      - name: lap_times
+      - name: pit_stops
+      - name: qualifying
+      - name: results
+      - name: seasons
+      - name: sprint_results
+      - name: status
+      - name: constructor_standings
