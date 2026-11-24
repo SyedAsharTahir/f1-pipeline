@@ -6,4 +6,4 @@ select
     nullif("position",'\N')::int as standing_position,
     nullif("positionText",'\N') as position_text,
     nullif("wins",'\N')::int  as wins
-from {{source('raw','driver_standings')}}
+from {{source('raw','driver_standings')}} 
