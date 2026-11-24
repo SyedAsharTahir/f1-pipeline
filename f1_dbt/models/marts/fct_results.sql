@@ -1,0 +1,20 @@
+select
+    result_id,
+    race_id,
+    driver_id,
+    constructor_id,
+    car_number,
+     grid_position,
+    finish_position,
+    position_text,
+    position_order,
+     points,
+    laps_completed,
+    finish_time,
+    finish_milliseconds,
+    fastest_lap_number,
+    fastest_lap_rank,
+    fastest_lap_time,
+    fastest_lap_speed,
+    status_id
+from {{ref('stg_results')}}
