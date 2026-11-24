@@ -1,0 +1,20 @@
+select
+    nullif("raceId",'\N')::int as race_id,
+    nullif("year",'\N')::int as race_year,
+    nullif("round",'\N')::int as race_round,
+    nullif("circuitId",'\N')::int as circuit_id,
+    nullif("name",'\N') as race_name,
+    nullif("date",'\N')::date as race_date,
+    nullif("time",'\N')::time  as race_time,
+    nullif("url",'\N') as race_url,
+    nullif("fp1_date",'\N')::date as fp1_date,
+    nullif("fp1_time",'\N')::time as fp1_time,
+    nullif("fp2_date",'\N')::date as fp2_date,
+    nullif("fp2_time",'\N')::time as fp2_time,
+    nullif("fp3_date",'\N')::date as fp3_date,
+    nullif("fp3_time",'\N')::time as fp3_time,
+    nullif("quali_date",'\N')::date as quali_date,
+    nullif("quali_time",'\N')::time as quali_time,
+    nullif("sprint_date",'\N')::date as sprint_date, 
+    nullif("sprint_time",'\N')::time as sprint_time 
+from {{source('raw','races')}}
