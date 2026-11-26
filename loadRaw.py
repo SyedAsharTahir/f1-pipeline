@@ -1,4 +1,4 @@
-#laoding the tables from csv as exact to postgres
+#loading the tables from csv as exact to postgres
 import csv,os,sys,psycopg2 
 from pathlib import Path
 from psycopg2 import sql
