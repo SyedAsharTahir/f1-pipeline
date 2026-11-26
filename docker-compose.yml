@@ -13,7 +13,63 @@ services:
         test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
         interval: 5s
         retries: 10
+ 
+    airflow-db:
+      image: postgres:16
+      environment:
+        POSTGRES_USER: airflow
+        POSTGRES_PASSWORD: airflow
+        POSTGRES_DB: airflow
+      volumes:
+        - airflowdb:/var/lib/postgresql/data
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+        interval: 5s
+        retries: 10
+      
+    airflow:
+      build: .
+      command: standalone
+      depends_on:
+        postgres:
+          condition: service_healthy
+        airflow-db:
+          condition: service_healthy
+      environment:
+        AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+        AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+        AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS: "true"   # dev only, skips login
+        AIRFLOW_CONN_F1_POSTGRES: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+         # dbt writes here instead of the mounted repo (fixes the permission error)
+        DBT_LOG_PATH: /tmp/dbt_logs
+        DBT_TARGET_PATH: /tmp/dbt_target
+        DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+        # the Jolpica loader reads these
+        PGHOST: postgres
+        PGPORT: "5432"
+        PGUSER: ${POSTGRES_USER}
+        PGPASSWORD: ${POSTGRES_PASSWORD}
+        PGDATABASE: ${POSTGRES_DB}
+        POSTGRES_DB: ${POSTGRES_DB}
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        DBT_HOST: postgres
+        DBT_PORT: "5432"
+        DBT_USER: ${POSTGRES_USER}
+        DBT_PASSWORD: ${POSTGRES_PASSWORD}
+        DBT_DBNAME: ${POSTGRES_DB}
+        DBT_PROFILES_DIR: /opt/airflow/dbt
+      ports:
+        - "8080:8080"
+      volumes:
+        - ./dags:/opt/airflow/dags
+        - ./plugins:/opt/airflow/plugins
+        - ./f1_dbt:/opt/airflow/dbt
+        - ./loadJolpica.py:/opt/airflow/loaders/loadJolpica.py
+
 
 volumes:
       pgdata:
         name: f1_pgdata
+      airflowdb:
+        name: f1_airflowdb

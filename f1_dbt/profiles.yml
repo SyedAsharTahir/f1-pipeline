@@ -1,12 +1,12 @@
-f1_dbt:  # Profile name (matches dbt_project.yml)
-  target: dev  # Default target to use
+f1_dbt:
+  target: dev
   outputs:
-    dev: # Development environment
-      type: postgres # Required: snowflake, bigquery, databricks, redshift, postgres, etc
-      host: localhost 
-      dbname: "{{env_var('POSTGRES_DB')}}"
-      port: "{{env_var('POSTGRES_PORT') | as_number }}"
-      schema: staging         
-      user: "{{ env_var('POSTGRES_USER')}}"  
-      password: "{{env_var('POSTGRES_PASSWORD')}}"
-      threads: 4   # Number of parallel threads
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'localhost') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      port: "{{ env_var('DBT_PORT', env_var('POSTGRES_PORT', '5432')) | as_number }}"
+      schema: staging
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      threads: 4
