@@ -13,7 +13,7 @@ An ELT pipeline that loads Formula 1 World Championship data into Postgres, mode
 | dbt marts: `dim_drivers`, `dim_constructors`, `dim_circuits`, `dim_status`, `dim_races` | Done |
 | dbt mart: `fct_results` | Done |
 | Airflow orchestration (Dockerized, dbt in its own venv) | Done |
-| dbt tests (unique, not_null, relationships) | Planned |
+| dbt tests (unique, not_null, relationships), 11 tests | Done |
 | Dashboard and analysis | Planned |
 
 ## Architecture
@@ -23,7 +23,7 @@ Kaggle CSVs ----> loadRaw.py -----+
                                   +--> raw schema --> dbt staging (views) --> dbt marts (tables) --> dashboard
 Jolpica API ----> load_jolpica.py +    (text copy)     clean, cast, rename       star schema          (planned)
 
-                  Airflow (f1_pipeline DAG) schedules the loads and dbt runs
+                  Airflow (f1_pipeline DAG, weekly) runs the Jolpica load, dbt run and dbt test
 ```
 
 This is an ELT design. Data is loaded as-is, and all cleaning and modeling happens inside Postgres with dbt.
@@ -68,7 +68,7 @@ f1-pipeline/
 |-- .env.example           # connection settings template
 |-- data/                  # Kaggle CSVs (gitignored)
 |-- dags/
-|   `-- f1_pipeline.py     # f1_pipeline and weather_daily DAGs
+|   `-- f1_pipeline.py     # f1_pipeline DAG: load new races, dbt run, dbt test
 |-- plugins/
 |   `-- load_jolpica.py    # Jolpica API loader (2025 onward)
 `-- f1_dbt/
@@ -156,7 +156,9 @@ docker compose exec airflow airflow dags trigger f1_pipeline
 docker compose exec airflow airflow dags list-runs f1_pipeline
 ```
 
-The Airflow UI is at http://localhost:8080. The `weather_daily` DAG is paused by default; unpause it the same way when you want it running.
+The DAG is scheduled for 06:00 every Monday (Airflow's default timezone is UTC). Each run loads any newly finished races from the Jolpica API, then runs `dbt run` and `dbt test`. The load task retries twice, 10 minutes apart, if it fails.
+
+The Airflow UI is at http://localhost:8080.
 
 ### Running dbt manually (optional)
 
@@ -168,6 +170,7 @@ cd f1_dbt
 dbt debug --profiles-dir .
 dbt run --select staging --profiles-dir .
 dbt run --select marts --profiles-dir .
+dbt test --profiles-dir .
 ```
 
 ## Verifying the load
@@ -194,6 +197,13 @@ docker compose exec postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -P pager=off
 - Lap, qualifying and finishing times (for example `1:26.572`) are kept as text, because they are durations and not times of day.
 - Generic names are prefixed to avoid clashes in joins (`race_name`, `circuit_name`, `finish_position`, and so on).
 
+## Data tests
+
+`f1_dbt/models/marts/schema.yml` defines 11 dbt tests, and the DAG runs them after every `dbt run`:
+
+- `unique` and `not_null` on the primary keys of `dim_races`, `dim_drivers`, `dim_constructors` and `fct_results`
+- `relationships` from `fct_results.race_id`, `fct_results.driver_id` and `fct_results.constructor_id` to their dimension tables
+
 ## Troubleshooting
 
 | Symptom | Cause and fix |
@@ -204,7 +214,7 @@ docker compose exec postgres psql -U $POSTGRES_USER -d $POSTGRES_DB -P pager=off
 
 ## Roadmap
 
-- Add dbt tests: unique and not_null on primary keys, relationships from `fct_results` to each dimension.
+- Extend dbt tests to `dim_status` and `dim_circuits`, including a relationships test from `fct_results.status_id` to `dim_status`.
 - Optional extra facts: `fct_lap_times`, `fct_pit_stops`, `fct_qualifying`.
 - Dashboard and analysis on the marts schema.
 
